@@ -2,6 +2,7 @@
 #define MEMORY
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 /*
 输入：虚拟内存页数，物理内存页数，页大小（给进程分配的页框数（最大设为 8），没用)
@@ -54,7 +55,28 @@ typedef struct s_PCB {
 Frame* memory = NULL;
 Program* program_list = NULL;
 PCB* pcb_list = NULL;
-int program_count = 0;
-int process_count = 0;
+// clock algorithm
+int clock = 0;
+
+
+void main();
+int menu();
+
+int create_program();
+int create_program_from_inst(int instructions[], int inst_count);
+int create_process(int program_id);
+void release_process(int process_id);
+void execute_process(int process_id);
+
+void init_memory();
+Page* create_process_pages();
+void release_process_pages(PCB* pcb);
+
+void visit_page(PCB* process, int page_index);
+int get_free_frame();
+void swap_in(PCB* process, int page_index, int frame_index);
+void swap_out(int frame_index);
+int find_frame_to_swap_out();
+
 
 #endif

@@ -6,24 +6,6 @@
 #include "util.h"
 
 
-int menu();
-
-int create_program();
-int create_program_from_inst(int instructions[], int inst_count);
-int create_process(int program_id);
-void release_process(int process_id);
-void execute_process(int process_id);
-
-void init_memory();
-Page* create_process_pages();
-void release_process_pages(PCB* pcb);
-
-void visit_page(PCB* process, int page_index);
-int get_free_frame();
-void page_swap_in(PCB* process, int page_index, int frame_index);
-void page_swap_out(PCB* process, int page_index);
-
-
 int menu() {
     printf("-------------------");
     printf("1 create_program\n");
@@ -34,6 +16,33 @@ int menu() {
     scanf("%d", &choice);
     printf("\n");
     return choice;
+}
+
+void main() {
+    while (1) {
+        switch (menu()) {
+            case 1:
+                create_program();
+                break;
+            case 2:
+                printf("choose program id to create process from\n");
+                int program_id;
+                scanf("%d", &program_id);
+                printf("\n");
+                create_process(program_id);
+                break;
+            case 3:
+                printf("which process do you want execute\n");
+                int process_id;
+                scanf("%d", &process_id);
+                printf("\n");
+                execute_process(process_id);
+                break;
+            case 4:
+            default:
+                return;
+        }
+    }
 }
 
 int create_program() {
@@ -65,10 +74,9 @@ int create_program_from_inst(int instructions[], int inst_count) {
     memcpy(program->instructions, instructions, inst_count * sizeof(int));
     program->next = NULL;
 
-    if (program_count == 0) {
+    if (!program_list) {
         program->id = 0;
         program_list = program;
-        program_count++;
         return program->id;
     }
     Program* p = program_list;
@@ -78,7 +86,6 @@ int create_program_from_inst(int instructions[], int inst_count) {
 
     program->id = p->id + 1;
     p->next = program;
-    program_count++;
     return program->id;
 }
 
@@ -156,12 +163,6 @@ void execute_process(int process_id) {
         return;
     }
 
-    // 拿到要指令也就是地址
-    // 地址转换并打印：进程i要执行第j条指令，访问地址k，在第l页中
-    // 判断l页是否在内存
-    // 若不在，call 请求调页，参数进程id，页号l
-    // inst_executed++，若已经和指令总数相同，call release_process
-
     int address = get_next_instruction(process);
     int page_index = get_page_index(address, PAGE_SIZE);
     int offset = get_page_offset(address, PAGE_SIZE);
@@ -183,7 +184,7 @@ void init_memory() {
         memory[i].allocated = false;
         memory[i].process_id = -1;
         memory[i].page_index = -1;
-        memory[i].reference = 0;
+        memory[i].reference = false;
     }
 }
 
@@ -211,10 +212,10 @@ void visit_page(PCB* process, int page_index) {
 
     printf("miss\n");
     int frame_index = get_free_frame();
-    page_swap_in(process, page_index, frame_index);
+    swap_in(process, page_index, frame_index);
 }
 
-void page_swap_in(PCB* process, int page_index, int frame_index) {
+void swap_in(PCB* process, int page_index, int frame_index) {
     process->pages[page_index].in_mem = true;
     process->pages[page_index].frame_index = frame_index;
     memory[frame_index].allocated = true;
@@ -223,39 +224,38 @@ void page_swap_in(PCB* process, int page_index, int frame_index) {
     memory[frame_index].reference = true;
 }
 
-void page_swap_out()
+void swap_out(int frame_index) {
+    Frame frame = memory[frame_index];
+    PCB* process = find_process_by_id(frame.process_id);
+    Page page = process->pages[frame.page_index];
+    page.in_mem = false;
+    page.frame_index = -1;
+    frame.allocated = false;
+    frame.process_id = -1;
+    frame.page_index = -1;
+    frame.reference = false;
+}
 
 int get_free_frame() {
     for (int i = 0; i < PHYSICAL_MEM_PAGE; ++i) {
         if (!memory[i].allocated) return i;
     }
-
+    int frame_index = find_frame_to_swap_out();
+    swap_out(frame_index);
+    return frame_index;
 }
 
-
-int main() {
+int find_frame_to_swap_out() {
     while (1) {
-        switch (menu()) {
-            case 1:
-                create_program();
-                break;
-            case 2:
-                printf("choose program id to create process from\n");
-                int program_id;
-                scanf("%d", &program_id);
-                printf("\n");
-                create_process(program_id);
-                break;
-            case 3:
-                printf("which process do you want execute\n");
-                int process_id;
-                scanf("%d", &process_id);
-                printf("\n");
-                execute_process(process_id);
-                break;
-            case 4:
-            default:
-                return;
+        if (clock == PHYSICAL_MEM_PAGE) clock = 0;
+        if (!memory[clock].allocated) {
+            clock++;
+            continue;
         }
+        if (!memory[clock].reference) {
+            return clock;
+        }
+        memory[clock].reference = false;
+        clock++;
     }
 }
