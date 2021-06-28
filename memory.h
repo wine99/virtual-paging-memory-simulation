@@ -9,10 +9,6 @@
 输入：程序，一个程序包含一个访问地址序列，一个程序可以创建多个进程
 */
 
-int VIRTUAL_MEM_PAGE = 32;
-int PHYSICAL_MEM_PAGE = 16;
-int PAGE_SIZE = 4;
-// int PROCESS_MAX_FRAME = 4;
 
 // process page
 typedef struct s_Page {
@@ -52,12 +48,6 @@ typedef struct s_PCB {
     // Frame* frames[8];
 } PCB;
 
-Frame* memory = NULL;
-Program* program_list = NULL;
-PCB* pcb_list = NULL;
-// clock algorithm
-int clock = 0;
-
 
 void main();
 int menu();
@@ -78,5 +68,10 @@ void swap_in(PCB* process, int page_index, int frame_index);
 void swap_out(int frame_index);
 int find_frame_to_swap_out();
 
+Program* find_program_by_id(int program_id);
+PCB* find_process_by_id(int process_id);
+int get_next_instruction(PCB* process);
+int get_page_index(int address, int page_size);
+int get_page_offset(int address, int page_size);
 
 #endif

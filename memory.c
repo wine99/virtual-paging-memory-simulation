@@ -6,8 +6,20 @@
 #include "util.h"
 
 
+int VIRTUAL_MEM_PAGE = 8;
+int PHYSICAL_MEM_PAGE = 4;
+int PAGE_SIZE = 4;
+// int PROCESS_MAX_FRAME = 4;
+
+Frame* memory = NULL;
+Program* program_list = NULL;
+PCB* pcb_list = NULL;
+// clock algorithm
+int clock = 0;
+
+
 int menu() {
-    printf("-------------------");
+    printf("\n-----------------\n");
     printf("1 create_program\n");
     printf("2 create_process\n");
     printf("3 execute_process\n");
@@ -19,6 +31,7 @@ int menu() {
 }
 
 void main() {
+    init_memory();
     while (1) {
         switch (menu()) {
             case 1:
@@ -48,12 +61,13 @@ void main() {
 int create_program() {
     int instructions[128];
     int inst_count = 0;
-    printf("what is the execution sequence (e.g. 1 2 3 4 5 1 2)\n");
+    printf("what is the execution sequence (e.g. 0 4 8 12 16 12 4 20)\n");
     printf("the number represents the memory address that instruction uses\n");
     printf("numbers should range from 0 to VIRTUAL_MEM_PAGE*PAGE_SIZE, i.e. %d\n",
            VIRTUAL_MEM_PAGE * PAGE_SIZE);
     char str[128];
     getline_stdin(str);
+    printf("\n");
 
     char delims[] = " ";
     char *inst_chars = NULL;
@@ -65,7 +79,9 @@ int create_program() {
         inst_chars = strtok(NULL, delims);
     }
 
-    return create_program_from_inst(instructions, inst_count);
+    int program_id = create_program_from_inst(instructions, inst_count);
+    printf("program %d created\n", program_id);
+    return program_id;
 }
 
 int create_program_from_inst(int instructions[], int inst_count) {
@@ -105,6 +121,7 @@ int create_process(int program_id) {
     if (!pcb_list) {
         pcb->id = 0;
         pcb_list = pcb;
+        printf("process %d created\n", pcb->id);
         return pcb->id;
     }
 
@@ -114,6 +131,7 @@ int create_process(int program_id) {
     }
     pcb->id = p->id + 1;
     p->next = pcb;
+    printf("process %d created\n", pcb->id);
     return pcb->id;
 }
 
@@ -168,7 +186,7 @@ void execute_process(int process_id) {
     int offset = get_page_offset(address, PAGE_SIZE);
     printf("process %d executes instruction %d ,",
            process_id, process->inst_executed);
-    printf("visiting virtual memory address %d\n: page %d, offset %d\n",
+    printf("visiting virtual memory address %d: page %d, offset %d\n",
            address, page_index, offset);
     visit_page(process, page_index);
 
@@ -216,6 +234,8 @@ void visit_page(PCB* process, int page_index) {
 }
 
 void swap_in(PCB* process, int page_index, int frame_index) {
+    printf("page %d of process %d swaps in to frame %d\n",
+           process->id, page_index, frame_index);
     process->pages[page_index].in_mem = true;
     process->pages[page_index].frame_index = frame_index;
     memory[frame_index].allocated = true;
@@ -225,8 +245,11 @@ void swap_in(PCB* process, int page_index, int frame_index) {
 }
 
 void swap_out(int frame_index) {
+    printf("frame %d, ", frame_index);
     Frame frame = memory[frame_index];
     PCB* process = find_process_by_id(frame.process_id);
+    printf("which belongs to process %d, page %d, swaps out to disk\n",
+           process->id, frame.page_index);
     Page page = process->pages[frame.page_index];
     page.in_mem = false;
     page.frame_index = -1;
@@ -258,4 +281,34 @@ int find_frame_to_swap_out() {
         memory[clock].reference = false;
         clock++;
     }
+}
+
+Program* find_program_by_id(int program_id) {
+    if (!program_list) return NULL;
+    Program* p = program_list;
+    while (p && p->id != program_id) {
+        p = p->next;
+    }
+    return p;
+}
+
+PCB* find_process_by_id(int process_id) {
+    if (!pcb_list) return NULL;
+    PCB* p = pcb_list;
+    while (p && p->id != process_id) {
+        p = p->next;
+    }
+    return p;
+}
+
+int get_next_instruction(PCB* process) {
+    return process->program->instructions[process->inst_executed];
+}
+
+int get_page_index(int address, int page_size) {
+    return (int) (address / page_size);
+}
+
+int get_page_offset(int address, int page_size) {
+    return address % page_size;
 }
