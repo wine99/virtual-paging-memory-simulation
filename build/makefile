@@ -1,8 +1,17 @@
-memory : memory.o util.o
-    gcc -o memory memory.o util.o
+ifeq ($(OS),Windows_NT)
+	RM = del
+else
+	RM = rm
+endif
 
-memory.o : ../memory.c ../memory.h
-    gcc -c ../memory.c
+memory: memory.o util.o
+	gcc -g -o memory memory.o util.o
 
-util.o : ../util.c ../util.h
-    gcc -c ../util.c
+memory.o: ../memory.c ../memory.h
+	gcc -g -c ../memory.c
+
+util.o: ../util.c ../util.h
+	gcc -g -c ../util.c
+
+clean:
+	del *.exe del *.o
