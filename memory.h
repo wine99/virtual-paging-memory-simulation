@@ -15,18 +15,18 @@ int PAGE_SIZE = 4;
 
 // process page
 typedef struct s_Page {
-    int index;
+    // int index;
     // int content_size;
-    int process_id;
+    // int process_id;
     bool in_mem;
     int frame_index;
     // bool reference;
-    struct s_Page* next;
+    // struct s_Page* next;
 } Page;
 
 // memory page frame
 typedef struct s_Frame {
-    int index;
+    // int index;
     // int content_size;
     bool allocated;
     int process_id;
@@ -46,11 +46,12 @@ typedef struct s_PCB {
     int id;
     Program* program;
     int inst_executed;
-    Page* page_list;
+    Page* pages;
     struct s_PCB* next;
     // Frame* frames[8];
 } PCB;
 
+Frame* memory = NULL;
 Program* program_list = NULL;
 PCB* pcb_list = NULL;
 int program_count = 0;
