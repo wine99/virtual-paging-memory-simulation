@@ -52,7 +52,6 @@ void main() {
                 execute_process(process_id);
                 break;
             case 4:
-            default:
                 return;
         }
     }
@@ -216,6 +215,15 @@ Page* create_process_pages() {
 }
 
 void release_process_pages(PCB* process) {
+    int process_id = process->id;
+    for (int i = 0; i < PHYSICAL_MEM_PAGE; ++i) {
+        if (memory[i].process_id == process->id) {
+            memory[i].allocated = false;
+            memory[i].process_id = -1;
+            memory[i].page_index = -1;
+            memory[i].reference = false;
+        }
+    }
     free(process->pages);
 }
 
@@ -235,7 +243,7 @@ void visit_page(PCB* process, int page_index) {
 
 void swap_in(PCB* process, int page_index, int frame_index) {
     printf("page %d of process %d swaps in to frame %d\n",
-           process->id, page_index, frame_index);
+           page_index, process->id, frame_index);
     process->pages[page_index].in_mem = true;
     process->pages[page_index].frame_index = frame_index;
     memory[frame_index].allocated = true;
