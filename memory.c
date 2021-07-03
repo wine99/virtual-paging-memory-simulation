@@ -165,15 +165,14 @@ void release_process(int process_id) {
 }
 
 void execute_process(int process_id) {
-    if (!pcb_list) {
+    PCB* process = find_process_by_id(process_id);
+    if (!process) {
         printf("process does not exist: %d -- EXECUTE_PROCESS\n",
                 process_id);
         return;
     }
 
-    PCB* process = find_process_by_id(process_id);
     Program* program = process->program;
-
     if (process->inst_executed >= program->inst_count) {
         printf("unexpected error: instructions of process %d "
                "already ran out -- EXECUTE_PROCESS\n", process_id);
