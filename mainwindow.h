@@ -1,8 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <map>
+#include <QMap>
 #include <QMainWindow>
 #include <QStandardItemModel>
+#include <blockvis.h>
 #include <memory.h>
 
 QT_BEGIN_NAMESPACE
@@ -27,6 +30,9 @@ public:
     static PCB* pcb_list;
     // clock algorithm
     static int clock;
+
+    static BlockVis *physical_mem_vis;
+    static QMap<int, BlockVis*> virtual_mems_vis;
 
     int create_program();
     int create_program_from_inst(int instructions[], int inst_count);

@@ -9,18 +9,21 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    blockvis.cpp \
     initdialog.cpp \
     main.cpp \
     mainwindow.cpp \
     util.cpp
 
 HEADERS += \
+    blockvis.h \
     initdialog.h \
     mainwindow.h \
     memory.h \
     util.h
 
 FORMS += \
+    blockvis.ui \
     initdialog.ui \
     mainwindow.ui
 

@@ -41,9 +41,15 @@ QColor BlockVis::get_color() {
 }
 
 void BlockVis::set_block(int index, int value, QColor color) {
-
+    auto model = this->block_table_model;
+    model->setItem(index, 0, new QStandardItem(QString::number(value)));
+    model->item(index, 0)->setTextAlignment(Qt::AlignCenter);
+    model->item(index, 0)->setFont(QFont("Times", 14, QFont::Black));
+    model->item(index, 0)->setBackground(color);
 }
 
 void BlockVis::unset_block(int index) {
-
+    auto model = this->block_table_model;
+    model->item(index, 0)->setBackground(Qt::white);
+    model->setItem(index, 0, new QStandardItem(""));
 }

@@ -8,6 +8,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    physical_mem_vis = new BlockVis(nullptr, PHYSICAL_MEM_PAGE);
+    physical_mem_vis->show();
+
     this->program_table_model = new QStandardItemModel;
     this->program_table_model->setColumnCount(2);
     this->program_table_model->setHorizontalHeaderItem(0, new QStandardItem("id") );
@@ -42,6 +45,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+// not used in GUI
 int MainWindow::create_program() {
     int instructions[128];
     int inst_count = 0;
@@ -198,6 +202,7 @@ Page* MainWindow::create_process_pages() {
     return pages;
 }
 
+// modified in GUI
 void MainWindow::release_process_pages(PCB* process) {
     for (int i = 0; i < PHYSICAL_MEM_PAGE; ++i) {
         if (memory[i].process_id == process->id) {
@@ -205,9 +210,16 @@ void MainWindow::release_process_pages(PCB* process) {
             memory[i].process_id = -1;
             memory[i].page_index = -1;
             memory[i].reference = false;
+
+            physical_mem_vis->unset_block(i);
         }
     }
     free(process->pages);
+
+    auto virtual_mem_vis = virtual_mems_vis.find(process->id);
+    virtual_mems_vis.erase(virtual_mem_vis);
+    virtual_mem_vis.value()->close();
+    delete virtual_mem_vis.value();
 }
 
 void MainWindow::visit_page(PCB* process, int page_index) {
@@ -224,6 +236,7 @@ void MainWindow::visit_page(PCB* process, int page_index) {
     swap_in(process, page_index, frame_index);
 }
 
+// modified in GUI
 void MainWindow::swap_in(PCB* process, int page_index, int frame_index) {
     printf("page %d of process %d swaps in to frame %d\n",
            page_index, process->id, frame_index);
@@ -233,8 +246,13 @@ void MainWindow::swap_in(PCB* process, int page_index, int frame_index) {
     memory[frame_index].process_id = process->id;
     memory[frame_index].page_index = page_index;
     memory[frame_index].reference = true;
+
+    auto virtual_mem_vis = virtual_mems_vis.find(process->id).value();
+    virtual_mem_vis->set_block(page_index, frame_index, virtual_mem_vis->get_color());
+    physical_mem_vis->set_block(frame_index, page_index, virtual_mem_vis->get_color());
 }
 
+// modified in GUI
 void MainWindow::swap_out(int frame_index) {
     printf("frame %d, ", frame_index);
     Frame frame = memory[frame_index];
@@ -242,6 +260,11 @@ void MainWindow::swap_out(int frame_index) {
     printf("which belongs to process %d, page %d, swaps out to disk\n",
            process->id, frame.page_index);
     Page page = process->pages[frame.page_index];
+
+    auto virtual_mem_vis = virtual_mems_vis.find(process->id).value();
+    virtual_mem_vis->unset_block(frame.page_index);
+    physical_mem_vis->unset_block(frame_index);
+
     page.in_mem = false;
     page.frame_index = -1;
     frame.allocated = false;
@@ -329,7 +352,7 @@ void MainWindow::on_create_program_btn_clicked()
         inst_chars = strtok(NULL, delims);
     }
 
-    // for tuples in program_table, ROW always equals to ID
+    // for tuples in program_table, ROWs are always identical IDs
     int program_id = create_program_from_inst(instructions, inst_count);
     int row = get_program_count(program_list) - 1;
     this->program_table_model->setItem(row, 0, new QStandardItem(QString::number(program_id)));
@@ -349,6 +372,10 @@ void MainWindow::on_create_process_btn_clicked()
     this->pcb_table_model->setItem(row, 1, new QStandardItem(this->program_table_model->item(program_id, 1)->text()));
     this->pcb_table_model->setItem(row, 2, new QStandardItem(QString::number(0)));
     this->pcb_table_model->setItem(row, 3, new QStandardItem(QString::number(program->instructions[0])));
+
+    BlockVis *b = new BlockVis(nullptr, VIRTUAL_MEM_PAGE, process_id, QColor::fromHsl(rand()%360,rand()%256,rand()%200));
+    virtual_mems_vis.insert(process_id, b);
+    b->show();
 }
 
 
@@ -356,7 +383,7 @@ void MainWindow::on_exec_process_btn_clicked()
 {
     int process_id = this->ui->exec_process_text->text().toInt();
 
-    // code below is the same as execute_process()
+    // code below is identical to execute_process()
     PCB* process = find_process_by_id(process_id);
     if (!process) {
         printf("process does not exist: %d -- EXECUTE_PROCESS\n",
@@ -381,7 +408,7 @@ void MainWindow::on_exec_process_btn_clicked()
     visit_page(process, page_index);
 
     process->inst_executed++;
-    // code above is the same as execute_process()
+    // code above is identical to execute_process()
 
     int row = find_process_row(process_id);
     if (process->inst_executed == program->inst_count) {

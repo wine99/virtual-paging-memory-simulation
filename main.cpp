@@ -14,13 +14,12 @@ PCB* MainWindow::pcb_list = NULL;
 // clock algorithm
 int MainWindow::clock = 0;
 
+BlockVis* MainWindow::physical_mem_vis = NULL;
+QMap<int, BlockVis *> MainWindow::virtual_mems_vis;
 
 int main(int argc, char *argv[])
 {
-
     QApplication a(argc, argv);
-    //InitMem init_mem_window;
-    //init_mem_window.show();
     InitDialog dlg;
     if (dlg.exec() == QDialog::Accepted) {
         MainWindow w;
