@@ -1,35 +1,25 @@
-#ifndef MEMORY
-#define MEMORY
-
-#include <stdlib.h>
+#ifndef MEMORY_H
+#define MEMORY_H
 #include <stdbool.h>
 
 /*
-输入：虚拟内存页数，物理内存页数，页大小（给进程分配的页框数（最大设为 8），没用)
+输入：虚拟内存页数，物理内存页数，页大小
 输入：程序，一个程序包含一个访问地址序列，一个程序可以创建多个进程
 */
 
 
-// process page
+// Process page
 typedef struct s_Page {
-    // int index;
-    // int content_size;
-    // int process_id;
     bool in_mem;
     int frame_index;
-    // bool reference;
-    // struct s_Page* next;
 } Page;
 
-// memory page frame
+// Memory page frame
 typedef struct s_Frame {
-    // int index;
-    // int content_size;
     bool allocated;
     int process_id;
     int page_index;
     bool reference;
-    // struct s_Frame* next;
 } Frame;
 
 typedef struct s_Program {
@@ -45,18 +35,24 @@ typedef struct s_PCB {
     int inst_executed;
     Page* pages;
     struct s_PCB* next;
-    // Frame* frames[8];
 } PCB;
 
 
-void main();
-int menu();
+extern int VIRTUAL_MEM_PAGE;
+extern int PHYSICAL_MEM_PAGE;
+extern int PAGE_SIZE;
 
-int create_program();
-int create_program_from_inst(int instructions[], int inst_count);
+extern Frame* memory;
+extern Program* program_list;
+extern PCB* pcb_list;
+// Clock algorithm
+extern int clock;
+
+
+int create_program(int instructions[], int inst_count);
 int create_process(int program_id);
-void release_process(int process_id);
-void execute_process(int process_id);
+int release_process(int process_id);
+int execute_process(int process_id);
 
 void init_memory();
 Page* create_process_pages();

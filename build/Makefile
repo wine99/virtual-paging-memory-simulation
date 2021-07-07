@@ -1,11 +1,17 @@
-memory: memory.o util.o
-	gcc -g -o memory memory.o util.o
+main: main.o util.o libmemory.a
+	gcc -o main main.o util.o -static libmemory.a
+	rm *.o
 
-memory.o: ../memory.c ../memory.h
-	gcc -g -c ../memory.c
+libmemory.a: ../src/memory/memory.c ../src/memory/memory.h
+	gcc -c ../src/memory/memory.c
+	ar -rcs libmemory.a memory.o
+	rm memory.o
 
-util.o: ../util.c ../util.h
-	gcc -g -c ../util.c
+main.o: ../src/main.c ../src/main.h ../src/memory_api.h
+	gcc -c ../src/main.c
+
+util.o: ../src/util/util.c ../src/util/util.h
+	gcc -c ../src/util/util.c
 
 clean:
-	rm memory *.o
+	rm main libmemory.a *.o
