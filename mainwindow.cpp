@@ -28,7 +28,6 @@ MainWindow::MainWindow(QWidget *parent)
     this->pcb_table_model->setHorizontalHeaderItem(1, new QStandardItem("instruction sequence"));
     this->pcb_table_model->setHorizontalHeaderItem(2, new QStandardItem("pc"));
     this->pcb_table_model->setHorizontalHeaderItem(3, new QStandardItem("pc inst"));
-    // this->pcb_table_model->setHorizontalHeaderItem(4, new QStandardItem("exec"));
     this->ui->pcb_table->setModel(this->pcb_table_model);
 
     this->ui->pcb_table->verticalHeader()->setHidden(true);
@@ -37,38 +36,11 @@ MainWindow::MainWindow(QWidget *parent)
     this->ui->pcb_table->setColumnWidth(1, 600);
     this->ui->pcb_table->setColumnWidth(2, 50);
     this->ui->pcb_table->setColumnWidth(3, 100);
-    // this->ui->pcb_table->setColumnWidth(4, 100);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-}
-
-// not used in GUI
-int MainWindow::create_program() {
-    int instructions[128];
-    int inst_count = 0;
-    printf("what is the execution sequence (e.g. 0 4 8 12 16 12 4 20)\n");
-    printf("the number represents the memory address that instruction uses\n");
-    printf("numbers should range from 0 to VIRTUAL_MEM_PAGE*PAGE_SIZE, i.e. %d\n",
-           VIRTUAL_MEM_PAGE * PAGE_SIZE);
-    char str[128];
-    getline_stdin(str);
-    printf("\n");
-
-    char delims[] = " ";
-    char *inst_chars = NULL;
-    inst_chars = strtok(str, delims);
-    while (inst_chars) {
-        instructions[inst_count] = atoi(inst_chars);
-        inst_count++;
-        inst_chars = strtok(NULL, delims);
-    }
-
-    int program_id = create_program_from_inst(instructions, inst_count);
-    printf("program %d created\n", program_id);
-    return program_id;
 }
 
 
@@ -93,10 +65,10 @@ int MainWindow::create_program_from_inst(int instructions[], int inst_count) {
     return program->id;
 }
 
+
 int MainWindow::create_process(int program_id) {
     Program* program = find_program_by_id(program_id);
     if (!program) {
-        printf("program not found: %d -- CREATE_PROCESS\n", program_id);
         return -1;
     }
 
@@ -109,7 +81,6 @@ int MainWindow::create_process(int program_id) {
     if (!pcb_list) {
         pcb->id = 0;
         pcb_list = pcb;
-        printf("process %d created\n", pcb->id);
         return pcb->id;
     }
 
@@ -119,17 +90,13 @@ int MainWindow::create_process(int program_id) {
     }
     pcb->id = p->id + 1;
     p->next = pcb;
-    printf("process %d created\n", pcb->id);
     return pcb->id;
 }
 
 void MainWindow::release_process(int process_id) {
     if (!pcb_list) {
-        printf("process does not exist: %d -- RELEASE_PROCESS\n",
-                process_id);
         return;
     }
-    printf("process %d exiting\n", process_id);
 
     PCB* p = pcb_list;
     PCB* prev = NULL;
@@ -149,32 +116,22 @@ void MainWindow::release_process(int process_id) {
         free(p);
         return;
     }
-    printf("process does not exist: %d -- RELEASE_PROCESS\n",
-            process_id);
 }
+
 
 void MainWindow::execute_process(int process_id) {
     PCB* process = find_process_by_id(process_id);
     if (!process) {
-        printf("process does not exist: %d -- EXECUTE_PROCESS\n",
-                process_id);
         return;
     }
 
     Program* program = process->program;
     if (process->inst_executed >= program->inst_count) {
-        printf("unexpected error: instructions of process %d "
-               "already ran out -- EXECUTE_PROCESS\n", process_id);
         return;
     }
 
     int address = get_next_instruction(process);
     int page_index = get_page_index(address, PAGE_SIZE);
-    int offset = get_page_offset(address, PAGE_SIZE);
-    printf("process %d executes instruction %d ,",
-           process_id, process->inst_executed);
-    printf("visiting virtual memory address %d: page %d, offset %d\n",
-           address, page_index, offset);
     visit_page(process, page_index);
 
     process->inst_executed++;
@@ -182,6 +139,7 @@ void MainWindow::execute_process(int process_id) {
         release_process(process_id);
     }
 }
+
 
 void MainWindow::init_memory() {
     memory = (Frame*) calloc(PHYSICAL_MEM_PAGE, sizeof(Frame));
@@ -193,6 +151,7 @@ void MainWindow::init_memory() {
     }
 }
 
+
 Page* MainWindow::create_process_pages() {
     Page* pages = (Page*) calloc(VIRTUAL_MEM_PAGE, sizeof(Page));
     for (int i = 0; i < VIRTUAL_MEM_PAGE; ++i) {
@@ -201,6 +160,7 @@ Page* MainWindow::create_process_pages() {
     }
     return pages;
 }
+
 
 // modified in GUI
 void MainWindow::release_process_pages(PCB* process) {
@@ -219,27 +179,26 @@ void MainWindow::release_process_pages(PCB* process) {
     auto virtual_mem_vis = virtual_mems_vis.find(process->id);
     virtual_mems_vis.erase(virtual_mem_vis);
     virtual_mem_vis.value()->close();
-    delete virtual_mem_vis.value();
 }
+
 
 void MainWindow::visit_page(PCB* process, int page_index) {
     Page page = process->pages[page_index];
 
     if (page.in_mem) {
-        printf("hit\n");
+        // hit
         memory[page.frame_index].reference = true;
         return;
     }
 
-    printf("miss\n");
+    // miss
     int frame_index = get_free_frame();
     swap_in(process, page_index, frame_index);
 }
 
+
 // modified in GUI
 void MainWindow::swap_in(PCB* process, int page_index, int frame_index) {
-    printf("page %d of process %d swaps in to frame %d\n",
-           page_index, process->id, frame_index);
     process->pages[page_index].in_mem = true;
     process->pages[page_index].frame_index = frame_index;
     memory[frame_index].allocated = true;
@@ -252,13 +211,11 @@ void MainWindow::swap_in(PCB* process, int page_index, int frame_index) {
     physical_mem_vis->set_block(frame_index, page_index, virtual_mem_vis->get_color());
 }
 
+
 // modified in GUI
 void MainWindow::swap_out(int frame_index) {
-    printf("frame %d, ", frame_index);
     Frame frame = memory[frame_index];
     PCB* process = find_process_by_id(frame.process_id);
-    printf("which belongs to process %d, page %d, swaps out to disk\n",
-           process->id, frame.page_index);
     Page page = process->pages[frame.page_index];
 
     auto virtual_mem_vis = virtual_mems_vis.find(process->id).value();
@@ -273,6 +230,7 @@ void MainWindow::swap_out(int frame_index) {
     frame.reference = false;
 }
 
+
 int MainWindow::get_free_frame() {
     for (int i = 0; i < PHYSICAL_MEM_PAGE; ++i) {
         if (!memory[i].allocated) return i;
@@ -281,6 +239,7 @@ int MainWindow::get_free_frame() {
     swap_out(frame_index);
     return frame_index;
 }
+
 
 int MainWindow::find_frame_to_swap_out() {
     while (1) {
@@ -296,6 +255,7 @@ int MainWindow::find_frame_to_swap_out() {
         clock++;
     }
 }
+
 
 Program* MainWindow::find_program_by_id(int program_id) {
     if (!program_list) return NULL;
@@ -314,6 +274,7 @@ PCB* MainWindow::find_process_by_id(int process_id) {
     }
     return p;
 }
+
 
 int MainWindow::get_next_instruction(PCB* process) {
     return process->program->instructions[process->inst_executed];
@@ -386,25 +347,16 @@ void MainWindow::on_exec_process_btn_clicked()
     // code below is identical to execute_process()
     PCB* process = find_process_by_id(process_id);
     if (!process) {
-        printf("process does not exist: %d -- EXECUTE_PROCESS\n",
-                process_id);
         return;
     }
 
     Program* program = process->program;
     if (process->inst_executed >= program->inst_count) {
-        printf("unexpected error: instructions of process %d "
-               "already ran out -- EXECUTE_PROCESS\n", process_id);
         return;
     }
 
     int address = get_next_instruction(process);
     int page_index = get_page_index(address, PAGE_SIZE);
-    int offset = get_page_offset(address, PAGE_SIZE);
-    printf("process %d executes instruction %d ,",
-           process_id, process->inst_executed);
-    printf("visiting virtual memory address %d: page %d, offset %d\n",
-           address, page_index, offset);
     visit_page(process, page_index);
 
     process->inst_executed++;

@@ -10,26 +10,18 @@
 */
 
 
-// process page
+// Process page
 typedef struct s_Page {
-    // int index;
-    // int content_size;
-    // int process_id;
     bool in_mem;
     int frame_index;
-    // bool reference;
-    // struct s_Page* next;
 } Page;
 
-// memory page frame
+// Memory page frame
 typedef struct s_Frame {
-    // int index;
-    // int content_size;
     bool allocated;
     int process_id;
     int page_index;
     bool reference;
-    // struct s_Frame* next;
 } Frame;
 
 typedef struct s_Program {
@@ -45,7 +37,6 @@ typedef struct s_PCB {
     int inst_executed;
     Page* pages;
     struct s_PCB* next;
-    // Frame* frames[8];
 } PCB;
 
 

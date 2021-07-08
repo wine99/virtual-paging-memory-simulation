@@ -6,12 +6,11 @@
 int MainWindow::VIRTUAL_MEM_PAGE = 8;
 int MainWindow::PHYSICAL_MEM_PAGE = 4;
 int MainWindow::PAGE_SIZE = 4;
-// int PROCESS_MAX_FRAME = 4;
 
 Frame* MainWindow::memory = NULL;
 Program* MainWindow::program_list = NULL;
 PCB* MainWindow::pcb_list = NULL;
-// clock algorithm
+// Clock algorithm
 int MainWindow::clock = 0;
 
 BlockVis* MainWindow::physical_mem_vis = NULL;

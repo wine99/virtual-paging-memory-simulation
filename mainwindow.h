@@ -23,12 +23,11 @@ public:
     static int VIRTUAL_MEM_PAGE;
     static int PHYSICAL_MEM_PAGE;
     static int PAGE_SIZE;
-    // int PROCESS_MAX_FRAME = 4;
 
     static Frame* memory;
     static Program* program_list;
     static PCB* pcb_list;
-    // clock algorithm
+    // Clock algorithm
     static int clock;
 
     static BlockVis *physical_mem_vis;
