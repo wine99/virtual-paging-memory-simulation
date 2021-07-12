@@ -113,6 +113,7 @@ int execute_process(int process_id) {
     if (process->inst_executed == program->inst_count) {
         return release_process(process_id);
     }
+    return 0;
 }
 
 
